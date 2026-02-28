@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout - e-MiniShopRDC</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='paiement.css') }}">
+</head>
+<body>
+
+<header>
+  <div class="logo">e-MiniShopRDC</div>
+</header>
+
+<main>
+
+  <div class="checkout-section">
+    <h2>Mon Panier</h2>
+
+    <div class="cart-item">
+      <h3>PlayStation 5 Pro</h3>
+      <div class="price">950 $</div>
+    </div>
+
+    <div class="cart-item">
+      <h3>Casque Gaming</h3>
+      <div class="price">120 $</div>
+    </div>
+
+    <div class="total">
+      <span>Total</span>
+      <span>1070 $</span>
+    </div>
+  </div>
+
+  <div class="checkout-section">
+    <h2>Méthode de paiement</h2>
+    <div class="payment-methods">
+      <label>
+        <input type="radio" name="payment" value="orange-money">
+        Orange Money
+      </label>
+      <label>
+        <input type="radio" name="payment" value="airtel-money">
+        Airtel Money
+      </label>
+      <label>
+        <input type="radio" name="payment" value="mpesa">
+        M-Pesa
+      </label>
+      <label>
+        <input type="radio" name="payment" value="mpesa">
+        Visa/MasterCard
+      </label>
+    </div>
+
+    <button class="pay-btn">Payer maintenant</button>
+  </div>
+
+</main>
+
+</body>
+</html>
