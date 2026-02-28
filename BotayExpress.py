@@ -74,13 +74,25 @@ def fil_actu():
         if "user" in session:
             user = session["user"]
 
-            cursor.execute("SELECT * FROM products")
-            produits_random = cursor.fetchall()
-            random.shuffle(produits_random)
+            # Récupération produits + nom boutique
+            cursor.execute("""
+                SELECT p.*, b.nom_boutique
+                FROM products p
+                JOIN buyers b ON p.seller_id = b.id
+            """)
+            produits = cursor.fetchall()
 
-            return render_template("fil_actu.html", name=user["first_name"], produits=produits_random, user=user)
+            # Mélanger
+            random.shuffle(produits)
+
+            return render_template("fil_actu.html",
+                                   name=user["first_name"],
+                                   produits=produits,
+                                   user=user)
         else:
             return redirect(url_for("connexion"))
+
+    # ----- PARTIE POST (connexion) -----
 
     email = request.form.get("email")
     motdepasse = request.form.get("motdepasse")
@@ -92,19 +104,33 @@ def fil_actu():
         if user["email"] == email and user["password"] == motdepasse:
             session["user"] = user
 
-            cursor.execute("SELECT * FROM products")
-            produits_random = cursor.fetchall()
-            random.shuffle(produits_random)
+            # IMPORTANT : même requête JOIN ici !
+            cursor.execute("""
+                SELECT p.*, b.nom_boutique
+                FROM products p
+                JOIN buyers b ON p.seller_id = b.id
+            """)
+            produits = cursor.fetchall()
+            random.shuffle(produits)
 
-            return render_template("fil_actu.html", name=user["first_name"], produits=produits_random, user=user)
+            return render_template("fil_actu.html",
+                                   name=user["first_name"],
+                                   produits=produits,
+                                   user=user)
 
-    return render_template("connexion.html", error="Identifiants incorrects. Veuillez réessayer.")
-
+    return render_template("connexion.html",
+                           error="Identifiants incorrects. Veuillez réessayer.")
 @app.route("/produit/<int:product_id>")
 def produit_details(product_id):
-    user = session.get("user")  # récupérer l'utilisateur connecté
+    user = session.get("user")
 
-    cursor.execute("SELECT * FROM products WHERE id = %s", (product_id,))
+    cursor.execute("""
+        SELECT p.*, b.nom_boutique
+        FROM products p
+        JOIN buyers b ON p.seller_id = b.id
+        WHERE p.id = %s
+    """, (product_id,))
+    
     produit = cursor.fetchone()
 
     if produit:
@@ -112,12 +138,17 @@ def produit_details(product_id):
 
     return "Produit introuvable", 404
 
-
 @app.route("/add_product/<int:product_id>", methods=["GET", "POST"])
 def add_product(product_id):
     user = session.get("user")
 
-    cursor.execute("SELECT * FROM products WHERE id = %s", (product_id,))
+    cursor.execute("""
+        SELECT p.*, b.nom_boutique
+        FROM products p
+        JOIN buyers b ON p.seller_id = b.id
+        WHERE p.id = %s
+    """, (product_id,))
+    
     produit = cursor.fetchone()
 
     if produit:
@@ -261,8 +292,10 @@ def enregistrer_produit():
     if image_file and image_file.filename != "":
         filename = secure_filename(image_file.filename)
         image_path = os.path.join("static/uploads", filename)
+
         image_file.save(image_path)
-        image_url = image_path
+        image_url = "/" + image_path.replace("\\", "/")
+
     else:
         image_url = None  # ou une image par défaut
 
@@ -276,19 +309,17 @@ def enregistrer_produit():
     print("Produit ajouté avec succès")
 
     return redirect(url_for("profil_vendeur"))
-@app.route("/detail_produits_vendeur/<int:product_id>")
-def detail_produits_vendeur(product_id):
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-    produit = cursor.fetchone()
-    if not produit:
-        return "Produit non trouvé", 404
+@app.route("/detail_produits_vendeur")
+def detail_produits_vendeur():
+    user = session.get("user")
 
-    # Récupérer les détails du vendeur
-    cursor.execute("SELECT * FROM sellers WHERE id=%s", (produit["seller_id"],))
-    user = cursor.fetchone()
+    if not user:
+        return redirect(url_for("home"))
 
-    return render_template("details_produit_vendeur.html", produit=produit, user=user)
+    cursor.execute("SELECT * FROM products WHERE seller_id = %s", (user["id"],))
+    produits_vendeur = cursor.fetchall()
+
+    return render_template("detail_produits_vendeur.html", user=user, produits=produits_vendeur)
 
 @app.route("/acceuil")
 def acceuil():
